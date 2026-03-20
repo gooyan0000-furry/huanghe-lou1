@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>黄鹤楼 3D 展示</title>
     
-    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+    <!-- ✅ 使用 jsDelivr CDN（GitHub友好，国内访问更稳定） -->
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.3.0/dist/model-viewer.min.js"></script>
     
     <style>
         body { 
@@ -56,7 +57,7 @@
             color: #8b4513; 
         }
         
-        /* 📝 内容展示区域 - 重点改进 */
+        /* 📝 内容展示区域 */
         .content-display {
             margin-top: 15px;
             padding: 15px;
@@ -193,6 +194,10 @@
             font-size: 16px;
             color: #666;
             z-index: 50;
+            text-align: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 12px;
         }
         
         /* 提示动画 */
@@ -207,10 +212,11 @@
 </head>
 <body>
 
+    <!-- ✅ 关键修改：使用相对路径 + base-url 兼容 -->
     <model-viewer 
         id="ar-viewer"
-        src="model.glb" 
-        ios-src="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
+        src="./assets/model.glb" 
+        ios-src="https://cdn.jsdelivr.net/gh/google/model-viewer@v3.3.0/packages/shared-assets/models/Astronaut.usdz"
         alt="黄鹤楼 3D 模型"
         ar
         ar-modes="webxr scene-viewer quick-look"
@@ -219,23 +225,28 @@
         shadow-intensity="1"
         exposure="1"
         environment-image="neutral"
-        poster="https://modelviewer.dev/shared-assets/models/Astronaut.webp"
+        poster="./assets/poster.webp"
         loading="eager"
         auto-rotate
-        camera-orbit="0deg 75deg 105%">
+        camera-orbit="0deg 75deg 105deg"
+        reveal="auto">
 
+        <!-- ✅ 热点位置可根据实际模型调整 -->
         <button slot="hotspot-height" data-position="0 25 0" data-normal="0 0 1" 
-                class="hotspot" data-label="📏 建筑高度" aria-label="查看建筑高度">📏</button>
+                class="hotspot" data-label="📏 高度" aria-label="查看建筑高度">📏</button>
         <button slot="hotspot-history" data-position="0 5 0" data-normal="0 0 1" 
                 class="hotspot" data-label="📜 历史" aria-label="查看历史">📜</button>
         <button slot="hotspot-culture" data-position="-2 15 1" data-normal="0 0 1" 
                 class="hotspot" data-label="✍️ 诗词" aria-label="查看诗词">✍️</button>
         <button slot="hotspot-structure" data-position="2 10 1" data-normal="0 0 1" 
-                class="hotspot" data-label="🏗️ 建筑" aria-label="查看建筑">🏗️</button>
+                class="hotspot" data-label="🏗️ 结构" aria-label="查看建筑">🏗️</button>
         
     </model-viewer>
 
-    <div class="loading" id="loading-tip">黄鹤楼加载中...</div>
+    <div class="loading" id="loading-tip">
+        🏯 黄鹤楼加载中...<br>
+        <small style="color:#999">首次加载可能需要10-30秒</small>
+    </div>
 
     <!-- 🏯 数据面板 -->
     <div class="data-panel">
@@ -260,7 +271,7 @@
         
         <!-- 📝 内容展示区 -->
         <div class="content-display" id="content-display">
-            <div class="content-title" id="content-title"> 欢迎探索</div>
+            <div class="content-title" id="content-title">✨ 欢迎探索</div>
             <div class="content-text" id="content-text">
                 点击右侧按钮或模型上的热点，查看黄鹤楼的详细信息
             </div>
@@ -272,13 +283,25 @@
             <button class="switch-btn" data-key="height">📏 高度</button>
             <button class="switch-btn" data-key="history">📜 历史</button>
             <button class="switch-btn" data-key="culture">✍️ 诗词</button>
-            <button class="switch-btn" data-key="structure">🏗️ 建筑</button>
+            <button class="switch-btn" data-key="structure">🏗️ 结构</button>
         </div>
     </div>
 
-    
+    <!-- ⬇️ 底部导航栏 -->
+    <div class="bottom-nav">
+        <button class="nav-item active" data-key="intro">简介</button>
+        <button class="nav-item" data-key="height">高度</button>
+        <button class="nav-item" data-key="history">历史</button>
+        <button class="nav-item" data-key="culture">诗词</button>
+        <button class="nav-item" data-key="structure">结构</button>
+    </div>
 
     <script>
+        // ✅ GitHub Pages 路径兼容：自动获取基础路径
+        const basePath = window.location.pathname.includes('/<repository-name>/') 
+            ? '/<repository-name>/' 
+            : './';
+        
         const modelViewer = document.querySelector('#ar-viewer');
         const loadingTip = document.getElementById('loading-tip');
         const contentTitle = document.getElementById('content-title');
@@ -313,16 +336,23 @@
             }
         };
 
-        // 监听模型加载
+        // ✅ 监听模型加载成功
         modelViewer.addEventListener('load', () => {
             loadingTip.style.display = 'none';
             showContent('intro');
         });
         
+        // ✅ 监听加载进度（可选：显示进度条）
+        modelViewer.addEventListener('progress', (event) => {
+            const percent = Math.round(event.detail.totalProgress * 100);
+            loadingTip.innerHTML = `🏯 加载中... ${percent}%`;
+        });
+        
+        // ✅ 错误处理
         modelViewer.addEventListener('error', (e) => {
-            loadingTip.textContent = '模型加载失败，请检查 model.glb 路径';
-            loadingTip.style.color = 'red';
-            console.error('加载错误:', e);
+            console.error('模型加载错误:', e);
+            loadingTip.innerHTML = `❌ 加载失败<br><small style="color:#c41e3a">请检查：<br>1. assets/model.glb 是否存在<br>2. 文件大小是否超过100MB<br>3. 仓库是否启用 GitHub Pages</small>`;
+            loadingTip.style.color = '#c41e3a';
         });
 
         // 🎯 显示内容函数
@@ -330,36 +360,22 @@
             const data = yellowCraneTowerData[key];
             if (!data) return;
             
-            // 更新内容
             contentTitle.textContent = data.title;
             contentText.textContent = data.text;
             
-            // 调整相机角度
+            // 平滑过渡相机角度
             if (data.camera) {
                 modelViewer.setAttribute('camera-orbit', data.camera);
             }
             
-            // 更新按钮状态 - 快捷按钮
-            document.querySelectorAll('.switch-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.key === key);
-            });
-            
-            // 更新按钮状态 - 底部导航
-            document.querySelectorAll('.nav-item').forEach(btn => {
+            // 更新按钮状态
+            document.querySelectorAll('.switch-btn, .nav-item').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.key === key);
             });
         }
 
         // 🎮 快捷按钮点击事件
-        document.querySelectorAll('.switch-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const key = btn.dataset.key;
-                showContent(key);
-            });
-        });
-
-        // 🎮 底部导航点击事件
-        document.querySelectorAll('.nav-item').forEach(btn => {
+        document.querySelectorAll('.switch-btn, .nav-item').forEach(btn => {
             btn.addEventListener('click', () => {
                 const key = btn.dataset.key;
                 showContent(key);
@@ -379,28 +395,26 @@
             };
             
             const key = keyMap[slot];
-            if (key) {
-                showContent(key);
-            }
+            if (key) showContent(key);
             
-            // 震动反馈
-            if (navigator.vibrate) navigator.vibrate(50);
+            // 移动端震动反馈
+            if (navigator.vibrate) navigator.vibrate(30);
         });
 
         // ⌨️ 键盘快捷键支持
         document.addEventListener('keydown', (e) => {
             const keyMap = {
-                '1': 'intro',
-                '2': 'height',
-                '3': 'history',
-                '4': 'culture',
-                '5': 'structure'
+                '1': 'intro', '2': 'height', '3': 'history',
+                '4': 'culture', '5': 'structure'
             };
-            
             if (keyMap[e.key]) {
                 showContent(keyMap[e.key]);
+                e.preventDefault();
             }
         });
+
+        // 📱 移动端触摸优化
+        document.addEventListener('touchstart', () => {}, { passive: true });
 
     </script>
 </body>
